@@ -1,51 +1,53 @@
-// Base URL untuk DummyJSON API
-export const API_BASE_URL = 'https://dummyjson.com';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-// Custom Error Class untuk menangani error HTTP secara terstruktur
 export class ApiError extends Error {
   status: number;
-  statusText: string;
-  data: unknown;
 
-  constructor(message: string, status: number, data?: unknown) {
+  constructor(message: string, status: number) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
-    this.statusText = message;
-    this.data = data;
   }
 }
 
-// Generic API Client - fondasi semua request HTTP ke DummyJSON
-// Mendukung penerapan Caching Next.js melalui opsi fetch
 export async function apiClient<T>(
   endpoint: string,
-  options?: RequestInit & { next?: { revalidate?: number; tags?: string[] } }
+  options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  const defaultHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
+  let response: Response;
   try {
-    // Disekusi Request HTTP dengan Penerapan Caching Next.js
-    // next.revalidate mengontrol berapa detik cache berlaku (ISR)
-    const response = await fetch(url, {
-      headers: { 'Content-Type': 'application/json' },
+    response = await fetch(url, {
       ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
     });
-
-    if (!response.ok) {
-      // Passing Data untuk Penanganan Error (Catch)
-      const errorData = await response.json().catch(() => null);
-      throw new ApiError(response.statusText, response.status, errorData);
-    }
-
-    return response.json() as Promise<T>;
-  } catch (error) {
-    // Teruskan ApiError langsung, bungkus error lain
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(
-      `Terjadi error koneksi ke server API: ${(error as Error).message}`,
-      0,
-      error
+  } catch {
+    throw new Error(
+      'Gagal terhubung ke server backend'
     );
   }
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const errorMessage = data?.message || `Terjadi kesalahan (Status: ${response.status})`;
+    throw new ApiError(errorMessage, response.status);
+  }
+
+  return data as T;
 }

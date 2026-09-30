@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Button } from '@/app/components/ui/button';
 import { Todo } from '@/types/todo';
 
@@ -42,6 +43,17 @@ export default function TodoItem({ todo, onToggle, onDelete }: TodoItemProps) {
 
       {/* Aksi: Detail & Hapus */}
       <div className="flex items-center gap-2 shrink-0">
+        <Link href={`/task/${todo.id}`}>
+          <Button
+            type="button"
+            title="Lihat detail tugas"
+            variant="secondary"
+            size="xs"
+            className="text-xs font-medium"
+          >
+            Detail
+          </Button>
+        </Link>
         <Button
           type="button"
           onClick={() => onDelete(todo.id)}

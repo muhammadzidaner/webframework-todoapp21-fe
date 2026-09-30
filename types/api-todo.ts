@@ -6,6 +6,9 @@ export interface DummyJsonTodo {
   userId: number;
 }
 
+// Alias agar kompatibel dengan TodoService
+export type ApiTodo = DummyJsonTodo;
+
 // Tipe respons list dari DummyJSON API
 export interface DummyJsonTodosResponse {
   todos: DummyJsonTodo[];
@@ -13,6 +16,9 @@ export interface DummyJsonTodosResponse {
   skip: number;
   limit: number;
 }
+
+// Alias agar kompatibel dengan TodoService
+export type TodosApiResponse = DummyJsonTodosResponse;
 
 // Payload untuk membuat Todo baru (POST)
 export interface CreateTodoPayload {
